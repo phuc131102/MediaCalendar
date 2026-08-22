@@ -69,6 +69,103 @@ async function loadMediaData() {
     renderCalendar();
 }
 
+async function copyMedia(
+    id,
+    newDate,
+    newType
+) {
+
+    console.log("Copying media:", {
+        id,
+        newDate,
+        newType
+    });
+
+
+    const media =
+        mediaData.find(
+            item =>
+                String(item.id) === String(id)
+        );
+
+
+    if (!media) {
+
+        console.error(
+            "Original media not found:",
+            id
+        );
+
+        return;
+    }
+
+
+    // Don't copy to the exact same cell
+
+    if (
+        media.media_date === newDate &&
+        media.media_type === newType
+    ) {
+
+        console.log(
+            "Same cell - nothing to copy."
+        );
+
+        return;
+    }
+
+
+    // =====================================================
+    // INSERT NEW ROW
+    // =====================================================
+
+    const { data, error } =
+        await supabaseClient
+            .from("media_calendar")
+            .insert({
+                media_date: newDate,
+                media_type: newType,
+                image_url: media.image_url
+            })
+            .select()
+            .single();
+
+
+    if (error) {
+
+        console.error(
+            "SUPABASE COPY ERROR:",
+            error
+        );
+
+        alert(
+            "Could not copy image.\n\n" +
+            error.message
+        );
+
+        return;
+    }
+
+
+    console.log(
+        "Copy successful:",
+        data
+    );
+
+
+    // =====================================================
+    // ADD NEW ROW TO LOCAL DATA
+    // =====================================================
+
+    mediaData.push(data);
+
+
+    // =====================================================
+    // RE-RENDER
+    // =====================================================
+
+    renderCalendar();
+}
 
 // =========================================================
 // RENDER CALENDAR
@@ -403,6 +500,90 @@ function createMediaCell(
     images.className =
         "media-images";
 
+    images.dataset.date = dateString;
+
+    images.dataset.type = mediaType;
+
+    images.addEventListener(
+        "dragover",
+        event => {
+
+            event.preventDefault();
+
+            event.dataTransfer.dropEffect =
+                "copy";
+
+            images.classList.add(
+                "drag-over"
+            );
+        }
+    );
+
+
+    images.addEventListener(
+        "dragleave",
+        event => {
+
+            if (
+                !images.contains(
+                    event.relatedTarget
+                )
+            ) {
+
+                images.classList.remove(
+                    "drag-over"
+                );
+
+            }
+        }
+    );
+
+
+    images.addEventListener(
+        "drop",
+        async event => {
+
+            event.preventDefault();
+
+            event.stopPropagation();
+
+            images.classList.remove(
+                "drag-over"
+            );
+
+
+            const id =
+                event.dataTransfer.getData(
+                    "text/plain"
+                );
+
+
+            console.log(
+                "DROP DETECTED:",
+                id,
+                dateString,
+                mediaType
+            );
+
+
+            if (!id) {
+
+                console.error(
+                    "No media ID found in drag data."
+                );
+
+                return;
+            }
+
+
+            await copyMedia(
+                id,
+                dateString,
+                mediaType
+            );
+        }
+    );
+
 
     // Load existing images
 
@@ -462,6 +643,10 @@ function createImageElement(container, item) {
 
     wrapper.className = "media-image-wrapper";
 
+    wrapper.draggable = true;
+
+    wrapper.dataset.id = item.id;
+
 
     // Image
 
@@ -504,20 +689,15 @@ function createImageElement(container, item) {
         "click",
         async (event) => {
 
-            // Prevent other click events
             event.stopPropagation();
-
 
             const confirmed =
                 confirm(
                     "Delete this image?"
                 );
 
-
             if (!confirmed) return;
 
-
-            // Delete from Supabase
 
             const { error } =
                 await supabaseClient
@@ -541,17 +721,50 @@ function createImageElement(container, item) {
             }
 
 
-            // Remove from UI
-
             wrapper.remove();
-
-
-            // Remove from local data
 
             mediaData =
                 mediaData.filter(
                     media => media.id !== item.id
                 );
+        }
+    );
+
+
+    // =====================================================
+    // DRAG START
+    // =====================================================
+
+    wrapper.addEventListener(
+        "dragstart",
+        event => {
+
+            event.dataTransfer.setData(
+                "text/plain",
+                item.id
+            );
+
+            event.dataTransfer.effectAllowed =
+                "copy";
+
+            wrapper.classList.add(
+                "dragging"
+            );
+        }
+    );
+
+
+    // =====================================================
+    // DRAG END
+    // =====================================================
+
+    wrapper.addEventListener(
+        "dragend",
+        () => {
+
+            wrapper.classList.remove(
+                "dragging"
+            );
 
         }
     );
