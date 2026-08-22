@@ -1,0 +1,500 @@
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    background: #101116;
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+
+/* =========================================================
+   TOP HEADER
+========================================================= */
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 20px 30px;
+
+    border-bottom: 1px solid #2a2d35;
+
+    position: sticky;
+    top: 0;
+
+    z-index: 1000;
+
+    background: #101116;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+
+/* =========================================================
+   YEAR CONTROLS
+========================================================= */
+
+.year-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.year-controls button {
+    cursor: pointer;
+
+    background: #1b1e26;
+    color: white;
+
+    border: 1px solid #333743;
+
+    padding: 8px 14px;
+
+    border-radius: 6px;
+
+    font-size: 16px;
+}
+
+.year-controls button:hover {
+    background: #292d38;
+}
+
+#year {
+    font-size: 20px;
+    font-weight: bold;
+
+    min-width: 55px;
+
+    text-align: center;
+}
+
+
+/* =========================================================
+   CALENDAR
+========================================================= */
+
+#calendar {
+    width: 100%;
+    margin: 0 auto;
+}
+
+
+/* =========================================================
+   MONTH
+========================================================= */
+
+.month {
+    width: 100%;
+
+    background: #181a21;
+
+    border: 1px solid #2b2e38;
+
+    border-radius: 12px;
+
+    overflow: visible;
+}
+
+
+/* =========================================================
+   MONTH HEADER
+========================================================= */
+
+.month-header {
+    display: grid;
+
+    grid-template-columns: 60px 1fr 60px;
+
+    align-items: center;
+
+    background: #20232c;
+
+    border-bottom: 1px solid #2b2e38;
+
+    position: sticky;
+
+    top: 77px;
+
+    z-index: 900;
+}
+
+.month-header h2 {
+    margin: 0;
+
+    padding: 18px;
+
+    font-size: 24px;
+
+    text-align: center;
+}
+
+.month-nav {
+    width: 100%;
+
+    height: 100%;
+
+    min-height: 60px;
+
+    border: none;
+
+    background: transparent;
+
+    color: #aaa;
+
+    cursor: pointer;
+
+    font-size: 24px;
+
+    transition: 0.15s;
+}
+
+.month-nav:hover {
+    background: #292d38;
+    color: white;
+}
+
+
+/* =========================================================
+   WEEKDAYS
+========================================================= */
+
+.weekdays {
+    display: grid;
+
+    grid-template-columns:
+        repeat(7, minmax(0, 1fr));
+
+    background: #15171d;
+
+    border-bottom: 1px solid #2b2e38;
+
+    position: sticky;
+
+    top: 141px;
+
+    z-index: 899;
+}
+
+.weekday {
+    padding: 12px 5px;
+
+    text-align: center;
+
+    font-size: 13px;
+
+    font-weight: bold;
+
+    color: #999;
+
+    border-right: 1px solid #2b2e38;
+}
+
+.weekday:last-child {
+    border-right: none;
+}
+
+
+/* =========================================================
+   DAYS
+========================================================= */
+
+.days {
+    display: grid;
+
+    grid-template-columns:
+        repeat(7, minmax(0, 1fr));
+}
+
+
+/* =========================================================
+   DAY
+========================================================= */
+
+.day {
+    min-width: 0;
+
+    min-height: 320px;
+
+    background: #181a21;
+
+    border-right: 1px solid #2b2e38;
+
+    border-bottom: 1px solid #2b2e38;
+}
+
+.day:nth-child(7n) {
+    border-right: none;
+}
+
+
+/* Empty days */
+
+.day.empty {
+    background: #13151a;
+
+    min-height: 320px;
+}
+
+
+/* =========================================================
+   DATE
+========================================================= */
+
+.date {
+    padding: 9px 11px;
+
+    font-size: 14px;
+
+    font-weight: bold;
+
+    color: #999;
+
+    border-bottom: 1px solid #252832;
+}
+
+
+/* =========================================================
+   TODAY
+========================================================= */
+
+.day.today {
+    background: #1d2430;
+
+    box-shadow:
+        inset 0 0 0 3px #4da3ff;
+}
+
+.day.today .date {
+    background: #4da3ff;
+
+    color: white;
+
+    font-weight: bold;
+}
+
+
+/* =========================================================
+   MEDIA
+========================================================= */
+
+.media-container {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    height: 280px;
+}
+
+.media-cell {
+    min-width: 0;
+
+    min-height: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    border-right: 1px solid #2b2e38;
+}
+
+.media-cell:last-child {
+    border-right: none;
+}
+
+
+/* =========================================================
+   MEDIA HEADER
+========================================================= */
+
+.media-header {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    padding: 7px 9px;
+
+    min-height: 30px;
+
+    font-size: 10px;
+
+    color: #888;
+
+    border-bottom: 1px solid #252832;
+}
+
+
+/* =========================================================
+   MEDIA IMAGES
+========================================================= */
+
+.media-images {
+    flex: 1;
+
+    min-width: 0;
+
+    min-height: 0;
+
+    padding: 6px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 5px;
+
+    overflow: hidden;
+}
+
+.media-image {
+    width: 100%;
+
+    height: 100%;
+
+    min-width: 0;
+
+    min-height: 0;
+
+    object-fit: contain;
+
+    display: block;
+
+    border-radius: 4px;
+}
+
+
+/* =========================================================
+   ADD BUTTON
+========================================================= */
+
+.add-media {
+    border: none;
+
+    background: transparent;
+
+    color: #777;
+
+    cursor: pointer;
+
+    font-size: 16px;
+
+    line-height: 1;
+
+    padding: 0 2px;
+}
+
+.add-media:hover {
+    color: white;
+}
+
+/* =========================================================
+   IMAGE WRAPPER
+========================================================= */
+
+.media-image-wrapper {
+    position: relative;
+
+    width: 100%;
+    height: 100%;
+
+    min-width: 0;
+    min-height: 0;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+}
+
+
+/* =========================================================
+   IMAGE
+========================================================= */
+
+.media-image {
+    width: 100%;
+    height: 100%;
+
+    min-width: 0;
+    min-height: 0;
+
+    object-fit: contain;
+
+    display: block;
+
+    border-radius: 4px;
+}
+
+
+/* =========================================================
+   DELETE BUTTON
+========================================================= */
+
+.delete-media {
+    position: absolute;
+
+    top: 4px;
+    right: 4px;
+
+    width: 22px;
+    height: 22px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background: rgba(0, 0, 0, 0.8);
+
+    color: white;
+
+    font-size: 16px;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    opacity: 0;
+
+    transition:
+        opacity 0.15s ease,
+        background 0.15s ease;
+}
+
+
+/* Show × when hovering image */
+
+.media-image-wrapper:hover .delete-media {
+    opacity: 1;
+}
+
+
+/* Hover × */
+
+.delete-media:hover {
+    background: #e53935;
+
+    color: white;
+}

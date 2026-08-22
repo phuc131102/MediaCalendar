@@ -1,0 +1,710 @@
+const SUPABASE_URL = "https://lbudxhjempyjozxpfnkg.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxidWR4aGplbXB5am96eHBmbmtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczOTM3MjEsImV4cCI6MjEwMjk2OTcyMX0.Nbw-EcVzG1vwmO5C-9xNOwuKRPqksXhL4eeH4exnbMo";
+
+const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
+
+const calendar = document.getElementById("calendar");
+const yearElement = document.getElementById("year");
+
+const today = new Date();
+
+let currentYear = today.getFullYear();
+let currentMonth = today.getMonth();
+
+let mediaData = [];
+
+const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December"
+];
+
+const weekdays = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday"
+];
+
+async function loadMediaData() {
+
+    const { data, error } = await supabaseClient
+        .from("media_calendar")
+        .select("*")
+        .order("media_date", {
+            ascending: true
+        });
+
+    if (error) {
+
+        console.error(
+            "Failed to load media:",
+            error
+        );
+
+        alert(
+            "Could not load data from Supabase."
+        );
+
+        return;
+    }
+
+    mediaData = data || [];
+
+    renderCalendar();
+}
+
+
+// =========================================================
+// RENDER CALENDAR
+// =========================================================
+
+function renderCalendar() {
+
+    calendar.innerHTML = "";
+
+    yearElement.textContent = currentYear;
+
+    createMonth(currentMonth);
+
+    // Scroll to today's date if viewing current month/year
+    setTimeout(() => {
+
+        if (
+            currentYear === today.getFullYear() &&
+            currentMonth === today.getMonth()
+        ) {
+
+            const todayElement =
+                document.querySelector(".today");
+
+            if (todayElement) {
+
+                todayElement.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
+
+            }
+        }
+
+    }, 100);
+}
+
+
+// =========================================================
+// CREATE MONTH
+// =========================================================
+
+function createMonth(month) {
+
+    const monthElement = document.createElement("section");
+
+    monthElement.className = "month";
+
+
+    // =====================================================
+    // MONTH HEADER
+    // =====================================================
+
+    const monthHeader = document.createElement("div");
+
+    monthHeader.className = "month-header";
+
+
+    const previousButton =
+        document.createElement("button");
+
+    previousButton.className = "month-nav";
+
+    previousButton.textContent = "←";
+
+
+    previousButton.addEventListener("click", () => {
+
+        changeMonth(-1);
+
+    });
+
+
+    const title = document.createElement("h2");
+
+    title.textContent =
+        `${months[month]} ${currentYear}`;
+
+
+    const nextButton =
+        document.createElement("button");
+
+    nextButton.className = "month-nav";
+
+    nextButton.textContent = "→";
+
+
+    nextButton.addEventListener("click", () => {
+
+        changeMonth(1);
+
+    });
+
+
+    monthHeader.append(
+        previousButton,
+        title,
+        nextButton
+    );
+
+
+    monthElement.appendChild(monthHeader);
+
+
+    // =====================================================
+    // WEEKDAYS
+    // =====================================================
+
+    const weekdaysContainer =
+        document.createElement("div");
+
+    weekdaysContainer.className = "weekdays";
+
+
+    weekdays.forEach(day => {
+
+        const weekday =
+            document.createElement("div");
+
+        weekday.className = "weekday";
+
+        weekday.textContent = day;
+
+        weekdaysContainer.appendChild(weekday);
+
+    });
+
+
+    monthElement.appendChild(weekdaysContainer);
+
+
+    // =====================================================
+    // DAYS
+    // =====================================================
+
+    const daysContainer =
+        document.createElement("div");
+
+    daysContainer.className = "days";
+
+
+    const daysInMonth =
+        new Date(
+            currentYear,
+            month + 1,
+            0
+        ).getDate();
+
+
+    // JS Sunday = 0
+    // Convert to Monday = 0
+
+    let firstDay =
+        new Date(
+            currentYear,
+            month,
+            1
+        ).getDay();
+
+    firstDay = (firstDay + 6) % 7;
+
+
+    // Empty cells before first day
+
+    for (let i = 0; i < firstDay; i++) {
+
+        const emptyDay =
+            document.createElement("div");
+
+        emptyDay.className = "day empty";
+
+        daysContainer.appendChild(emptyDay);
+    }
+
+
+    // Actual days
+
+    for (
+        let day = 1;
+        day <= daysInMonth;
+        day++
+    ) {
+
+        createDay(
+            daysContainer,
+            currentYear,
+            month,
+            day
+        );
+
+    }
+
+
+    monthElement.appendChild(daysContainer);
+
+    calendar.appendChild(monthElement);
+}
+
+
+// =========================================================
+// CREATE DAY
+// =========================================================
+
+function createDay(
+    container,
+    year,
+    month,
+    day
+) {
+
+    const dayElement =
+        document.createElement("div");
+
+    dayElement.className = "day";
+
+
+    // Check today
+
+    if (
+        year === today.getFullYear() &&
+        month === today.getMonth() &&
+        day === today.getDate()
+    ) {
+
+        dayElement.classList.add("today");
+
+    }
+
+
+    // Date
+
+    const date =
+        document.createElement("div");
+
+    date.className = "date";
+
+    date.textContent = day;
+
+
+    // Date string
+    // YYYY-MM-DD
+
+    const dateString =
+        `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+
+    // Media
+
+    const mediaContainer =
+        document.createElement("div");
+
+    mediaContainer.className =
+        "media-container";
+
+
+    const game =
+        createMediaCell(
+            "🎮 Game",
+            dateString,
+            "game"
+        );
+
+
+    const movie =
+        createMediaCell(
+            "🎬 Movie / Series",
+            dateString,
+            "movie"
+        );
+
+
+    mediaContainer.append(
+        game,
+        movie
+    );
+
+
+    dayElement.append(
+        date,
+        mediaContainer
+    );
+
+
+    container.appendChild(dayElement);
+}
+
+
+// =========================================================
+// MEDIA CELL
+// =========================================================
+
+function createMediaCell(
+    title,
+    dateString,
+    mediaType
+) {
+
+    const cell =
+        document.createElement("div");
+
+    cell.className = "media-cell";
+
+
+    // Header
+
+    const header =
+        document.createElement("div");
+
+    header.className =
+        "media-header";
+
+
+    const titleElement =
+        document.createElement("span");
+
+    titleElement.textContent =
+        title;
+
+
+    const addButton =
+        document.createElement("button");
+
+    addButton.textContent = "+";
+
+    addButton.className =
+        "add-media";
+
+
+    const images =
+        document.createElement("div");
+
+    images.className =
+        "media-images";
+
+
+    // Load existing images
+
+    const existingImages =
+        mediaData.filter(item =>
+
+            item.media_date === dateString &&
+            item.media_type === mediaType
+
+        );
+
+
+    existingImages.forEach(item => {
+
+        createImageElement(
+            images,
+            item
+        );
+
+    });
+
+
+    // Add image
+
+    addButton.addEventListener(
+        "click",
+        () => {
+
+            addImage(
+                images,
+                dateString,
+                mediaType
+            );
+
+        }
+    );
+
+
+    header.append(
+        titleElement,
+        addButton
+    );
+
+
+    cell.append(
+        header,
+        images
+    );
+
+
+    return cell;
+}
+
+function createImageElement(container, item) {
+
+    const wrapper = document.createElement("div");
+
+    wrapper.className = "media-image-wrapper";
+
+
+    // Image
+
+    const img = document.createElement("img");
+
+    img.src = item.image_url;
+
+    img.className = "media-image";
+
+    img.loading = "lazy";
+
+
+    img.onerror = () => {
+
+        wrapper.remove();
+
+        console.error(
+            "Could not load:",
+            item.image_url
+        );
+
+    };
+
+
+    // Delete button
+
+    const deleteButton =
+        document.createElement("button");
+
+    deleteButton.className =
+        "delete-media";
+
+    deleteButton.textContent = "×";
+
+    deleteButton.title =
+        "Delete image";
+
+
+    deleteButton.addEventListener(
+        "click",
+        async (event) => {
+
+            // Prevent other click events
+            event.stopPropagation();
+
+
+            const confirmed =
+                confirm(
+                    "Delete this image?"
+                );
+
+
+            if (!confirmed) return;
+
+
+            // Delete from Supabase
+
+            const { error } =
+                await supabaseClient
+                    .from("media_calendar")
+                    .delete()
+                    .eq("id", item.id);
+
+
+            if (error) {
+
+                console.error(
+                    "Failed to delete image:",
+                    error
+                );
+
+                alert(
+                    "Could not delete image."
+                );
+
+                return;
+            }
+
+
+            // Remove from UI
+
+            wrapper.remove();
+
+
+            // Remove from local data
+
+            mediaData =
+                mediaData.filter(
+                    media => media.id !== item.id
+                );
+
+        }
+    );
+
+
+    wrapper.append(
+        img,
+        deleteButton
+    );
+
+
+    container.appendChild(wrapper);
+}
+
+
+// =========================================================
+// ADD IMAGE
+// =========================================================
+
+async function addImage(
+    container,
+    dateString,
+    mediaType
+) {
+
+    const url =
+        prompt("Paste image URL:");
+
+    if (!url) return;
+
+
+    // Check URL
+
+    try {
+
+        new URL(url);
+
+    } catch {
+
+        alert("Invalid image URL.");
+
+        return;
+
+    }
+
+
+    // Insert into Supabase
+
+    const { data, error } =
+        await supabaseClient
+            .from("media_calendar")
+            .insert({
+                media_date: dateString,
+                media_type: mediaType,
+                image_url: url
+            })
+            .select()
+            .single();
+
+
+    if (error) {
+
+        console.error(
+            "Failed to save image:",
+            error
+        );
+
+        alert(
+            "Could not save image to Supabase."
+        );
+
+        return;
+    }
+
+
+    // Add to local UI
+
+    createImageElement(
+        container,
+        data
+    );
+}
+
+
+// =========================================================
+// CHANGE MONTH
+// =========================================================
+
+function changeMonth(direction) {
+
+    currentMonth += direction;
+
+
+    // Previous year
+
+    if (currentMonth < 0) {
+
+        currentMonth = 11;
+
+        currentYear--;
+
+    }
+
+
+    // Next year
+
+    if (currentMonth > 11) {
+
+        currentMonth = 0;
+
+        currentYear++;
+
+    }
+
+
+    renderCalendar();
+}
+
+
+// =========================================================
+// YEAR CONTROLS
+// =========================================================
+
+document
+    .getElementById("prevYear")
+    .addEventListener("click", () => {
+
+        currentYear--;
+
+        // January when moving to another year
+        currentMonth = 0;
+
+        renderCalendar();
+
+    });
+
+
+document
+    .getElementById("nextYear")
+    .addEventListener("click", () => {
+
+        currentYear++;
+
+        // January when moving to another year
+        currentMonth = 0;
+
+        renderCalendar();
+
+    });
+
+
+// =========================================================
+// INITIAL RENDER
+// =========================================================
+
+loadMediaData();
