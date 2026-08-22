@@ -43,12 +43,20 @@ const weekdays = [
 
 async function loadMediaData() {
 
-    const { data, error } = await supabaseClient
-        .from("media_calendar")
-        .select("*")
-        .order("media_date", {
-            ascending: true
-        });
+    const { data, error } =
+        await supabaseClient
+            .from("media_calendar")
+            .select("*")
+            .order("media_date", {
+                ascending: true
+            })
+            .order("created_at", {
+                ascending: true
+            })
+            .order("id", {
+                ascending: true
+            });
+
 
     if (error) {
 
@@ -63,6 +71,7 @@ async function loadMediaData() {
 
         return;
     }
+
 
     mediaData = data || [];
 
@@ -658,16 +667,44 @@ function createImageElement(container, item) {
 
     img.loading = "lazy";
 
+    // =====================================================
+    // ERROR LABEL
+    // =====================================================
+
+    const errorLabel =
+        document.createElement("div");
+
+    errorLabel.className =
+        "image-error-label";
+
+    errorLabel.textContent =
+        "⚠ Image failed to load";
+
+    errorLabel.title =
+        item.image_url;
+
+
+    // Hide by default
+
+    errorLabel.style.display =
+        "none";
+
+
+    // Image error
 
     img.onerror = () => {
 
-        wrapper.remove();
-
         console.error(
-            "Could not load:",
+            "IMAGE FAILED:",
             item.image_url
         );
 
+        wrapper.classList.add(
+            "image-error"
+        );
+
+        errorLabel.style.display =
+            "block";
     };
 
 

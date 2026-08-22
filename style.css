@@ -534,3 +534,33 @@ header h1 {
     box-shadow:
         inset 0 0 0 2px #4da3ff;
 }
+
+.image-error {
+    border: 2px solid #e53935;
+}
+
+.image-error-label {
+    position: absolute;
+
+    left: 50%;
+    top: 50%;
+
+    transform: translate(
+        -50%,
+        -50%
+    );
+
+    background: rgba(0, 0, 0, 0.85);
+
+    color: #ff6b6b;
+
+    padding: 6px 10px;
+
+    border-radius: 5px;
+
+    font-size: 11px;
+
+    white-space: nowrap;
+
+    pointer-events: none;
+}
