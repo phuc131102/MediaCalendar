@@ -50,7 +50,10 @@ async function loadMediaData() {
             .order("media_date", {
                 ascending: true
             })
-            .order("created_at", {
+            .order("media_type", {
+                ascending: true
+            })
+            .order("sort_order", {
                 ascending: true
             })
             .order("id", {
@@ -128,13 +131,25 @@ async function copyMedia(
     // INSERT NEW ROW
     // =====================================================
 
+    const existingItems =
+        mediaData.filter(
+            item =>
+                item.media_date === newDate &&
+                item.media_type === newType
+        );
+
+    const newSortOrder =
+        existingItems.length;
+
     const { data, error } =
         await supabaseClient
             .from("media_calendar")
             .insert({
                 media_date: newDate,
                 media_type: newType,
-                image_url: media.image_url
+                image_url: media.image_url,
+                sort_order: newSortOrder,
+                episode: ""
             })
             .select()
             .single();
@@ -172,6 +187,162 @@ async function copyMedia(
     // =====================================================
     // RE-RENDER
     // =====================================================
+
+    renderCalendar();
+}
+
+async function reorderMedia(
+    draggedId,
+    targetId
+) {
+
+    const dragged =
+        mediaData.find(
+            item =>
+                String(item.id) ===
+                String(draggedId)
+        );
+
+    const target =
+        mediaData.find(
+            item =>
+                String(item.id) ===
+                String(targetId)
+        );
+
+
+    if (!dragged || !target) return;
+
+
+    // Must be the same cell
+
+    if (
+        dragged.media_date !==
+            target.media_date ||
+        dragged.media_type !==
+            target.media_type
+    ) {
+        return;
+    }
+
+
+    // =====================================================
+    // GET ITEMS IN THIS CELL
+    // =====================================================
+
+    const items =
+        mediaData
+            .filter(
+                item =>
+                    item.media_date ===
+                        dragged.media_date &&
+                    item.media_type ===
+                        dragged.media_type
+            )
+            .sort(
+                (a, b) =>
+                    (a.sort_order ?? 0) -
+                    (b.sort_order ?? 0)
+            );
+
+
+    const oldIndex =
+        items.findIndex(
+            item =>
+                String(item.id) ===
+                String(draggedId)
+        );
+
+    const targetIndex =
+        items.findIndex(
+            item =>
+                String(item.id) ===
+                String(targetId)
+        );
+
+
+    if (
+        oldIndex === -1 ||
+        targetIndex === -1 ||
+        oldIndex === targetIndex
+    ) {
+        return;
+    }
+
+
+    // =====================================================
+    // MOVE ITEM
+    // =====================================================
+
+    const [movedItem] =
+        items.splice(oldIndex, 1);
+
+
+    items.splice(
+        targetIndex,
+        0,
+        movedItem
+    );
+
+
+    // =====================================================
+    // SAVE NEW ORDER
+    // =====================================================
+
+    for (
+        let i = 0;
+        i < items.length;
+        i++
+    ) {
+
+        items[i].sort_order = i;
+
+
+        const { error } =
+            await supabaseClient
+                .from("media_calendar")
+                .update({
+                    sort_order: i
+                })
+                .eq(
+                    "id",
+                    items[i].id
+                );
+
+
+        if (error) {
+
+            console.error(
+                "Failed to update order:",
+                error
+            );
+
+            alert(
+                "Could not reorder images."
+            );
+
+            return;
+        }
+    }
+
+
+    // =====================================================
+    // UPDATE LOCAL DATA
+    // =====================================================
+
+    mediaData = [
+        ...mediaData.filter(
+            item =>
+                !(
+                    item.media_date ===
+                        dragged.media_date &&
+                    item.media_type ===
+                        dragged.media_type
+                )
+        ),
+        ...items
+    ];
+
 
     renderCalendar();
 }
@@ -706,66 +877,137 @@ function createMediaCell(
 function createImageElement(container, item) {
 
     const wrapper = document.createElement("div");
-
     wrapper.className = "media-image-wrapper";
-
     wrapper.draggable = true;
-
     wrapper.dataset.id = item.id;
 
 
-    // Image
+    // =====================================================
+    // IMAGE
+    // =====================================================
 
     const img = document.createElement("img");
 
     img.src = item.image_url;
-
     img.className = "media-image";
-
     img.loading = "lazy";
 
     // =====================================================
-    // ERROR LABEL
+    // EPISODE INPUT
     // =====================================================
 
-    const errorLabel =
-        document.createElement("div");
+    const episodeInput =
+        document.createElement("input");
 
-    errorLabel.className =
-        "image-error-label";
+    episodeInput.type = "text";
 
-    errorLabel.textContent =
-        "⚠ Image failed to load";
+    episodeInput.className =
+        "episode-input";
 
-    errorLabel.title =
-        item.image_url;
+    episodeInput.placeholder =
+        "Episode";
 
-
-    // Hide by default
-
-    errorLabel.style.display =
-        "none";
+    episodeInput.value =
+        item.episode || "";
 
 
-    // Image error
+    episodeInput.addEventListener(
+        "click",
+        event => {
+            event.stopPropagation();
+        }
+    );
+
+
+    episodeInput.addEventListener(
+        "dragstart",
+        event => {
+            event.stopPropagation();
+        }
+    );
+
+
+    // Save when changed
+
+    episodeInput.addEventListener(
+        "change",
+        async event => {
+
+            event.stopPropagation();
+
+            const episode =
+                episodeInput.value.trim();
+
+
+            const { error } =
+                await supabaseClient
+                    .from("media_calendar")
+                    .update({
+                        episode: episode
+                    })
+                    .eq(
+                        "id",
+                        item.id
+                    );
+
+
+            if (error) {
+
+                console.error(
+                    "Failed to save episode:",
+                    error
+                );
+
+                alert(
+                    "Could not save episode."
+                );
+
+                return;
+            }
+
+
+            // Update local data
+
+            const localItem =
+                mediaData.find(
+                    media =>
+                        String(media.id) ===
+                        String(item.id)
+                );
+
+            if (localItem) {
+                localItem.episode =
+                    episode;
+            }
+
+            item.episode =
+                episode;
+        }
+    );
 
     img.onerror = () => {
 
-        console.error(
-            "IMAGE FAILED:",
-            item.image_url
-        );
+        img.classList.add("image-error");
 
-        wrapper.classList.add(
-            "image-error"
-        );
+        const errorLabel =
+            document.createElement("div");
 
-        errorLabel.style.display =
-            "block";
+        errorLabel.className =
+            "image-error-label";
+
+        errorLabel.textContent =
+            "⚠ Image failed to load";
+
+        errorLabel.title =
+            item.image_url;
+
+        wrapper.appendChild(errorLabel);
     };
 
 
-    // Delete button
+    // =====================================================
+    // DELETE BUTTON
+    // =====================================================
 
     const deleteButton =
         document.createElement("button");
@@ -781,14 +1023,12 @@ function createImageElement(container, item) {
 
     deleteButton.addEventListener(
         "click",
-        async (event) => {
+        async event => {
 
             event.stopPropagation();
 
             const confirmed =
-                confirm(
-                    "Delete this image?"
-                );
+                confirm("Delete this image?");
 
             if (!confirmed) return;
 
@@ -815,12 +1055,14 @@ function createImageElement(container, item) {
             }
 
 
-            wrapper.remove();
-
             mediaData =
                 mediaData.filter(
-                    media => media.id !== item.id
+                    media =>
+                        media.id !== item.id
                 );
+
+
+            wrapper.remove();
         }
     );
 
@@ -833,13 +1075,15 @@ function createImageElement(container, item) {
         "dragstart",
         event => {
 
-            event.dataTransfer.setData(
-                "text/plain",
-                item.id
-            );
+            event.stopPropagation();
 
             event.dataTransfer.effectAllowed =
-                "copy";
+                "copyMove";
+
+            event.dataTransfer.setData(
+                "text/plain",
+                String(item.id)
+            );
 
             wrapper.classList.add(
                 "dragging"
@@ -860,17 +1104,171 @@ function createImageElement(container, item) {
                 "dragging"
             );
 
+            document
+                .querySelectorAll(
+                    ".drag-target"
+                )
+                .forEach(element => {
+
+                    element.classList.remove(
+                        "drag-target"
+                    );
+
+                });
+        }
+    );
+
+
+    // =====================================================
+    // DRAG OVER ANOTHER IMAGE
+    // =====================================================
+
+    wrapper.addEventListener(
+        "dragover",
+        event => {
+
+            event.preventDefault();
+
+            event.stopPropagation();
+
+            const draggedId =
+                event.dataTransfer.getData(
+                    "text/plain"
+                );
+
+
+            // Don't target itself
+
+            if (
+                String(draggedId) ===
+                String(item.id)
+            ) {
+                return;
+            }
+
+
+            const dragged =
+                mediaData.find(
+                    media =>
+                        String(media.id) ===
+                        String(draggedId)
+                );
+
+
+            if (!dragged) return;
+
+
+            // Only reorder inside same cell
+
+            if (
+                dragged.media_date ===
+                    item.media_date &&
+                dragged.media_type ===
+                    item.media_type
+            ) {
+
+                wrapper.classList.add(
+                    "drag-target"
+                );
+
+                event.dataTransfer.dropEffect =
+                    "move";
+            }
+        }
+    );
+
+
+    // =====================================================
+    // DROP ON ANOTHER IMAGE
+    // =====================================================
+
+    wrapper.addEventListener(
+        "drop",
+        async event => {
+
+            event.preventDefault();
+
+            event.stopPropagation();
+
+
+            wrapper.classList.remove(
+                "drag-target"
+            );
+
+
+            const draggedId =
+                event.dataTransfer.getData(
+                    "text/plain"
+                );
+
+
+            if (!draggedId) return;
+
+
+            // Same image
+
+            if (
+                String(draggedId) ===
+                String(item.id)
+            ) {
+                return;
+            }
+
+
+            const dragged =
+                mediaData.find(
+                    media =>
+                        String(media.id) ===
+                        String(draggedId)
+                );
+
+
+            if (!dragged) return;
+
+
+            // =================================================
+            // SAME CELL = REORDER
+            // =================================================
+
+            if (
+                dragged.media_date ===
+                    item.media_date &&
+                dragged.media_type ===
+                    item.media_type
+            ) {
+
+                await reorderMedia(
+                    dragged.id,
+                    item.id
+                );
+
+                return;
+            }
+
+
+            // =================================================
+            // DIFFERENT CELL = COPY
+            // =================================================
+
+            await copyMedia(
+                dragged.id,
+                item.media_date,
+                item.media_type
+            );
         }
     );
 
 
     wrapper.append(
         img,
+        episodeInput,
         deleteButton
     );
 
 
-    container.appendChild(wrapper);
+    container.appendChild(
+        wrapper
+    );
 }
 
 
@@ -883,44 +1281,32 @@ async function addImage(
     dateString,
     mediaType
 ) {
-
-    const url =
-        prompt("Paste image URL:");
+    const url = prompt("Paste image URL:");
 
     if (!url) return;
 
-
     // Check URL
-
     try {
-
         new URL(url);
-
     } catch {
-
         alert("Invalid image URL.");
-
         return;
-
     }
 
-
-    // Insert into Supabase
-
+    // Insert image only
     const { data, error } =
         await supabaseClient
             .from("media_calendar")
             .insert({
                 media_date: dateString,
                 media_type: mediaType,
-                image_url: url
+                image_url: url,
+                episode: ""
             })
             .select()
             .single();
 
-
     if (error) {
-
         console.error(
             "Failed to save image:",
             error
@@ -933,9 +1319,10 @@ async function addImage(
         return;
     }
 
+    // Add to local data
+    mediaData.push(data);
 
-    // Add to local UI
-
+    // Create image
     createImageElement(
         container,
         data
