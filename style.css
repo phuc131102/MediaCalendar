@@ -3,7 +3,7 @@
 }
 
 html {
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
 }
 
 body {
@@ -563,4 +563,284 @@ header h1 {
     white-space: nowrap;
 
     pointer-events: none;
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+
+    /* =====================================================
+       TOP HEADER
+    ===================================================== */
+
+    header {
+        padding: 14px 16px;
+
+        height: 64px;
+    }
+
+    header h1 {
+        font-size: 18px;
+    }
+
+
+    .year-controls {
+        gap: 8px;
+    }
+
+    .year-controls button {
+        padding: 6px 10px;
+
+        font-size: 14px;
+    }
+
+    #year {
+        font-size: 16px;
+
+        min-width: 45px;
+    }
+
+
+    /* =====================================================
+       MONTH
+    ===================================================== */
+
+    .month {
+        border-radius: 0;
+
+        border-left: none;
+        border-right: none;
+    }
+
+
+    .month-header {
+        top: 64px;
+
+        grid-template-columns:
+            50px 1fr 50px;
+    }
+
+    .month-header h2 {
+        padding: 14px 5px;
+
+        font-size: 20px;
+    }
+
+    .month-nav {
+        min-height: 52px;
+
+        font-size: 22px;
+    }
+
+
+    /* =====================================================
+       WEEKDAYS
+    ===================================================== */
+
+    /*
+       The mobile layout has one day per row,
+       so the 7-column weekday header is hidden.
+    */
+
+    .weekdays {
+        display: none;
+    }
+
+
+    /* =====================================================
+       DAYS
+    ===================================================== */
+
+    .days {
+        display: grid;
+
+        grid-template-columns: 1fr;
+
+        width: 100%;
+    }
+
+
+    /* =====================================================
+       DAY
+    ===================================================== */
+
+    .day {
+        width: 100%;
+
+        /*
+           Almost the entire screen.
+           64px = top header
+           52px = month header
+        */
+
+        min-height:
+            calc(100vh - 116px);
+
+        height:
+            calc(100vh - 116px);
+
+        border-right: none;
+
+        border-bottom:
+            2px solid #2b2e38;
+    }
+
+
+    /*
+       Empty cells are only used for positioning
+       the first day of the month on desktop.
+       They aren't needed on mobile.
+    */
+
+    .day.empty {
+        display: none;
+    }
+
+
+    /* =====================================================
+       DATE
+    ===================================================== */
+
+    .date {
+        padding: 10px 14px;
+
+        font-size: 16px;
+    }
+
+
+    /* =====================================================
+       TODAY
+    ===================================================== */
+
+    .day.today {
+        box-shadow:
+            inset 0 0 0 3px #4da3ff;
+    }
+
+
+    /* =====================================================
+       MEDIA
+    ===================================================== */
+
+    .media-container {
+        height:
+            calc(100% - 42px);
+
+        min-height: 0;
+    }
+
+
+    .media-cell {
+        min-width: 0;
+
+        min-height: 0;
+    }
+
+
+    /* =====================================================
+       MEDIA HEADER
+    ===================================================== */
+
+    .media-header {
+        min-height: 38px;
+
+        padding: 8px 10px;
+
+        font-size: 12px;
+    }
+
+
+    .add-media {
+        font-size: 20px;
+
+        padding: 0 4px;
+    }
+
+
+    /* =====================================================
+       MEDIA IMAGES
+    ===================================================== */
+
+    .media-images {
+        padding: 8px;
+
+        gap: 8px;
+
+        overflow: hidden;
+    }
+
+
+    .media-image-wrapper {
+        width: 100%;
+
+        height: 100%;
+
+        min-height: 0;
+    }
+
+
+    .media-image {
+        width: 100%;
+
+        height: 100%;
+
+        object-fit: contain;
+    }
+
+
+    /* =====================================================
+       DELETE BUTTON
+    ===================================================== */
+
+    /*
+       On mobile there is no hover,
+       so always show the delete button.
+    */
+
+    .delete-media {
+        opacity: 1;
+
+        width: 28px;
+
+        height: 28px;
+
+        top: 6px;
+
+        right: 6px;
+
+        font-size: 18px;
+    }
+
+
+    /* =====================================================
+       DRAG & DROP
+    ===================================================== */
+
+    .media-images.drag-over {
+        background:
+            rgba(77, 163, 255, 0.15);
+
+        box-shadow:
+            inset 0 0 0 3px #4da3ff;
+    }
+
+
+    /* =====================================================
+       IMAGE ERROR
+    ===================================================== */
+
+    .image-error-label {
+        font-size: 10px;
+
+        padding: 5px 8px;
+
+        max-width: 90%;
+
+        overflow: hidden;
+
+        text-overflow: ellipsis;
+    }
+
 }

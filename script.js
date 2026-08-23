@@ -188,28 +188,85 @@ function renderCalendar() {
 
     createMonth(currentMonth);
 
-    // Scroll to today's date if viewing current month/year
-    setTimeout(() => {
 
-        if (
-            currentYear === today.getFullYear() &&
-            currentMonth === today.getMonth()
-        ) {
+    // =====================================================
+    // SCROLL TO TODAY WITHOUT ANIMATION
+    // =====================================================
 
-            const todayElement =
-                document.querySelector(".today");
+    if (
+        currentYear === today.getFullYear() &&
+        currentMonth === today.getMonth()
+    ) {
 
-            if (todayElement) {
+        const todayElement =
+            document.querySelector(".today");
 
-                todayElement.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center"
-                });
 
+        if (todayElement) {
+
+            const header =
+                document.querySelector("header");
+
+            const monthHeader =
+                document.querySelector(".month-header");
+
+            const weekdays =
+                document.querySelector(".weekdays");
+
+
+            let offset = 0;
+
+
+            if (header) {
+                offset += header.offsetHeight;
             }
-        }
 
-    }, 100);
+
+            if (monthHeader) {
+                offset += monthHeader.offsetHeight;
+            }
+
+
+            if (weekdays) {
+                offset += weekdays.offsetHeight;
+            }
+
+
+            offset += 0;
+
+
+            const elementTop =
+                todayElement.getBoundingClientRect().top
+                + window.scrollY;
+
+
+            const scrollPosition =
+                elementTop - offset;
+
+
+            // Disable smooth scrolling temporarily
+
+            document.documentElement.style.scrollBehavior =
+                "auto";
+
+
+            window.scrollTo({
+                top: scrollPosition,
+                behavior: "auto"
+            });
+
+
+            // Restore smooth scrolling for normal user scrolling
+
+            requestAnimationFrame(() => {
+
+                document.documentElement.style.scrollBehavior =
+                    "smooth";
+
+            });
+
+        }
+    }
 }
 
 
