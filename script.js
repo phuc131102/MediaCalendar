@@ -16,6 +16,25 @@ let currentMonth = today.getMonth();
 
 let mediaData = [];
 
+let isCtrlDragging = false;
+let ctrlPressed = false;
+
+document.addEventListener("keydown", event => {
+    if (event.key === "Control") {
+        ctrlPressed = true;
+    }
+});
+
+document.addEventListener("keyup", event => {
+    if (event.key === "Control") {
+        ctrlPressed = false;
+    }
+});
+
+window.addEventListener("blur", () => {
+    ctrlPressed = false;
+});
+
 const months = [
     "January",
     "February",
@@ -187,6 +206,84 @@ async function copyMedia(
     // =====================================================
     // RE-RENDER
     // =====================================================
+
+    renderCalendar();
+}
+
+async function moveMedia(
+    id,
+    newDate,
+    newType
+) {
+    const media =
+        mediaData.find(
+            item =>
+                String(item.id) === String(id)
+        );
+
+    if (!media) {
+        console.error(
+            "Original media not found:",
+            id
+        );
+        return;
+    }
+
+    // Same cell = nothing to move
+    if (
+        media.media_date === newDate &&
+        media.media_type === newType
+    ) {
+        return;
+    }
+
+    const existingItems =
+        mediaData.filter(
+            item =>
+                item.media_date === newDate &&
+                item.media_type === newType
+        );
+
+    const newSortOrder =
+        existingItems.length;
+
+    const { data, error } =
+        await supabaseClient
+            .from("media_calendar")
+            .update({
+                media_date: newDate,
+                media_type: newType,
+                sort_order: newSortOrder
+            })
+            .eq("id", media.id)
+            .select()
+            .single();
+
+    if (error) {
+        console.error(
+            "SUPABASE MOVE ERROR:",
+            error
+        );
+
+        alert(
+            "Could not move image.\n\n" +
+            error.message
+        );
+
+        return;
+    }
+
+    // Update local data
+    const index =
+        mediaData.findIndex(
+            item =>
+                String(item.id) ===
+                String(media.id)
+        );
+
+    if (index !== -1) {
+        mediaData[index] = data;
+    }
 
     renderCalendar();
 }
@@ -747,8 +844,7 @@ function createMediaCell(
 
             event.preventDefault();
 
-            event.dataTransfer.dropEffect =
-                "copy";
+            event.dataTransfer.dropEffect = ctrlPressed ? "move" : "copy";
 
             images.classList.add(
                 "drag-over"
@@ -813,11 +909,19 @@ function createMediaCell(
             }
 
 
-            await copyMedia(
-                id,
-                dateString,
-                mediaType
-            );
+            if (ctrlPressed) {
+                await moveMedia(
+                    id,
+                    dateString,
+                    mediaType
+                );
+            } else {
+                await copyMedia(
+                    id,
+                    dateString,
+                    mediaType
+                );
+            }
         }
     );
 
@@ -1077,6 +1181,8 @@ function createImageElement(container, item) {
 
             event.stopPropagation();
 
+            isCtrlDragging = ctrlPressed;
+
             event.dataTransfer.effectAllowed =
                 "copyMove";
 
@@ -1088,6 +1194,16 @@ function createImageElement(container, item) {
             wrapper.classList.add(
                 "dragging"
             );
+        }
+    );
+
+    wrapper.addEventListener(
+        "drag",
+        event => {
+
+            if (event.ctrlKey !== isCtrlDragging) {
+                isCtrlDragging = event.ctrlKey;
+            }
         }
     );
 
@@ -1171,8 +1287,7 @@ function createImageElement(container, item) {
                     "drag-target"
                 );
 
-                event.dataTransfer.dropEffect =
-                    "move";
+                event.dataTransfer.dropEffect = ctrlPressed ? "move" : "copy";
             }
         }
     );
@@ -1247,14 +1362,27 @@ function createImageElement(container, item) {
 
 
             // =================================================
-            // DIFFERENT CELL = COPY
+            // DIFFERENT CELL
             // =================================================
 
-            await copyMedia(
-                dragged.id,
-                item.media_date,
-                item.media_type
-            );
+            if (ctrlPressed) {
+
+                // Ctrl + drag = MOVE
+                await moveMedia(
+                    dragged.id,
+                    item.media_date,
+                    item.media_type
+                );
+
+            } else {
+
+                // Normal drag = COPY
+                await copyMedia(
+                    dragged.id,
+                    item.media_date,
+                    item.media_type
+                );
+            }
         }
     );
 
